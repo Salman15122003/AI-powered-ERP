@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Supermarket ERP{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <!-- Stat Cards Row -->
+        <div class="row mb-3">
+            <div class="col-md-4 mb-2">
+                <div class="stat-card d-flex align-items-center">
+                    <div class="me-3"><i class="fas fa-box fa-2x"></i></div>
+                    <div>
+                        <h3 id="total-products" class="mb-0">0</h3>
+                        <small>Total Products</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-2">
+                <div class="stat-card d-flex align-items-center">
+                    <div class="me-3"><i class="fas fa-dollar-sign fa-2x"></i></div>
+                    <div>
+                        <h3 id="total-sales" class="mb-0">0</h3>
+                        <small>Total Sales</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-2">
+                <div class="stat-card d-flex align-items-center">
+                    <div class="me-3"><i class="fas fa-exclamation-triangle fa-2x"></i></div>
+                    <div>
+                        <h3 id="low-stock" class="mb-0">0</h3>
+                        <small>Low Stock Items</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Sales Chart Card -->
+        <div class="card mb-4">
+            <div class="card-header d-flex align-items-center">
+                <i class="fas fa-chart-bar me-2"></i> Sales Prediction (Last 12 Months)
+            </div>
+            <div class="card-body">
+                <canvas id="salesChart" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('inventory') }}" class="btn btn-primary">
+                        <i class="fas fa-box"></i> Manage Inventory
+                    </a>
+                    <button class="btn btn-success" onclick="startNewSale()">
+                        <i class="fas fa-cash-register"></i> New Sale
+                    </button>
+                    <button class="btn btn-info" onclick="generateReport()">
+                        <i class="fas fa-chart-bar"></i> Generate Report
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Low Stock Alerts</h5>
+            </div>
+            <div class="card-body">
+                <div id="low-stock-alerts">
+                    <p class="text-center">Loading...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Recent Sales</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Product</th>
+                                <th>Quantity</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-sales">
+                            <tr>
+                                <td colspan="4" class="text-center">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Load dashboard data
+    function loadDashboardData() {
+        // Load total products
+        fetch('/api/products')
+            .then(response => response.json())
+            .then(products => {
+                document.getElementById('total-products').textContent = products.length;
+                const lowStock = products.filter(p => p.stock < 10).length;
+                document.getElementById('low-stock').textContent = lowStock;
+                
+                // Update low stock alerts
+                const alertsDiv = document.getElementById('low-stock-alerts');
+                const lowStockProducts = products.filter(p => p.stock < 10);
+                if (lowStockProducts.length === 0) {
+                    alertsDiv.innerHTML = '<p class="text-success">No low stock items</p>';
+                } else {
+                    alertsDiv.innerHTML = lowStockProducts.map(p => `
+                        <div class="alert alert-warning">
+                            <strong>${p.name}</strong>: Only ${p.stock} items left
+                        </div>
+                    `).join('');
+                }
+            });
+
+        // Load recent sales
+        fetch('/api/sales')
+            .then(response => response.json())
+            .then(sales => {
+                const salesTable = document.getElementById('recent-sales');
+                if (sales.length === 0) {
+                    salesTable.innerHTML = '<tr><td colspan="4" class="text-center">No sales recorded</td></tr>';
+                } else {
+                    salesTable.innerHTML = sales.slice(0, 5).map(sale => `
+                        <tr>
+                            <td>${new Date(sale.date).toLocaleDateString()}</td>
+                            <td>Product ID: ${sale.product_id}</td>
+                            <td>${sale.quantity}</td>
+                            <td>$${sale.total_price.toFixed(2)}</td>
+                        </tr>
+                    `).join('');
+                }
+                document.getElementById('total-sales').textContent = sales.length;
+            });
+    }
+
+    // Initialize dashboard
+    document.addEventListener('DOMContentLoaded', loadDashboardData);
+
+    // Quick action functions
+    function startNewSale() {
+        // Implement new sale functionality
+        alert('New sale functionality will be implemented here');
+    }
+
+    function generateReport() {
+        // Implement report generation
+        alert('Report generation will be implemented here');
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Fetch and render sales chart
+        fetch('/api/sales/monthly')
+            .then(res => res.json())
+            .then(data => {
+                const ctx = document.getElementById('salesChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: 'Sales ($)',
+                            data: data.data,
+                            backgroundColor: 'rgba(74, 144, 226, 0.2)',
+                            borderColor: '#4a90e2',
+                            borderWidth: 3,
+                            pointBackgroundColor: '#2ecc71',
+                            tension: 0.3,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { display: false },
+                            title: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { color: '#2c3e50' }
+                            },
+                            x: {
+                                ticks: { color: '#2c3e50' }
+                            }
+                        }
+                    }
+                });
+            });
+    });
+</script>
+{% endblock %} 
