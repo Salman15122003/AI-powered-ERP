@@ -1,0 +1,128 @@
+{
+  "name": "SQL AGENT",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "mode": "webhook",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "bf3386a9-1cad-4cf0-bc99-7a56d8afc070",
+      "name": "When chat message received",
+      "webhookId": "07163922-acef-410b-9534-ecf17d5514db",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=onvert this user message into an SQL query that works on the Chinook MySQL Schema: {{ $json.chatInput }}\n\n#use Pascal case to query,small letter for the schema\n\n### EXAMPLE:\nSELECT * FROM customer ORDER BY CustomerId LIMIT 5\""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        220,
+        0
+      ],
+      "id": "a522433f-d118-4685-91b7-b9cfbd5182ab",
+      "name": "OpenAI",
+      "alwaysOutputData": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "L6pM9nNgJxcOzTGP",
+          "name": "OpenAi account 6"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ $json.message.content }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        580,
+        0
+      ],
+      "id": "54a3e489-5ccb-4959-b1b3-6957acc62e9d",
+      "name": "MySQL",
+      "credentials": {
+        "mySql": {
+          "id": "0ioizFDR4HWcobo9",
+          "name": "MySQL account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "OpenAI": [
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT * FROM customer WHERE FirstName LIKE 'F%' ORDER BY CustomerId;",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "MySQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "8beb1ef2-c814-4cf9-b17a-f188cc6c0db3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b7fa933a885d5f0c0aaff9b04ae8675a17e8a2f6b819ec863704c7c9ae3e2bc7"
+  },
+  "id": "N86g9G1vDiK8b3iy",
+  "tags": []
+}
